@@ -15,4 +15,5 @@ wheels/
 
 .env
 
+
 data/olist.sqlite
