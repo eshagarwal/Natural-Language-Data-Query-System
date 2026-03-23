@@ -12,3 +12,5 @@ wheels/
 .adk/
 
 .ipynb_checkpoints/
+
+.env
