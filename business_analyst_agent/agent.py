@@ -5,9 +5,9 @@ from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
 
 root_agent = Agent(
-    # model="gemini-2.5-flash",
+    model="gemini-2.5-flash",
     # model=LiteLlm("ollama_chat/glm-5:cloud"),
-    model=LiteLlm("ollama_chat/"),
+    # model=LiteLlm("ollama_chat/"),
     # model=LiteLlm("ollama_chat/gpt-oss:20b-cloud"),
     name="root_agent",
     description="A helpful assistant for user questions.",
