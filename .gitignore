@@ -9,5 +9,4 @@ wheels/
 .ipynb_checkpoints/
 .env
 data/olist.sqlite
-data/session_data.db
 .DS_Store
