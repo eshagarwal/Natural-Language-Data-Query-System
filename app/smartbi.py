@@ -1,10 +1,55 @@
 import streamlit as st
-import pandas as pd
 import time
-import random
+import sys
+import os
+import asyncio
+
+async def setup_session(session_service, session_id):
+    session = await session_service.get_session(
+        app_name=APP_NAME,
+        user_id=USER_ID,
+        session_id=session_id,
+    )
+
+    if not session:
+        await session_service.create_session(
+            app_name=APP_NAME,
+            user_id=USER_ID,
+            session_id=session_id,
+            state={}
+        )
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ROOT_DIR)
 
 from styles import load_css
 from components import render_header, render_empty_state, render_messages
+from adk_service import initialize_adk, run_adk_sync
+# Load styles
+load_css()
+
+runner, session_service = initialize_adk()
+
+SESSION_KEY = "adk_session_id"
+APP_NAME = "smartbi_app"
+USER_ID = "esha_user"
+
+import time
+
+if SESSION_KEY not in st.session_state:
+    session_id = f"session_{int(time.time())}"
+    st.session_state[SESSION_KEY] = session_id
+else:
+    session_id = st.session_state[SESSION_KEY]
+
+# ✅ Run async session setup
+try:
+    asyncio.run(setup_session(session_service, session_id))
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(setup_session(session_service, session_id))
+    loop.close()
 
 # Page config
 st.set_page_config(
@@ -14,9 +59,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Load styles
-load_css()
-
 # Session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -24,15 +66,27 @@ if "messages" not in st.session_state:
 if "pending_query" not in st.session_state:
     st.session_state.pending_query = None
 
+if "clear_input" not in st.session_state:
+    st.session_state.clear_input = False
 
-# Dummy backend
+
+# backend
 def get_response(query: str):
-    time.sleep(random.uniform(0.8, 1.6))
-    return {
-        "text": "Sample response",
-        "table": None,
-        "insight": None,
-    }
+    try:
+        text = run_adk_sync(runner, session_id, query)
+
+        return {
+            "text": text,
+            "table": None,
+            "insight": None,
+        }
+
+    except Exception as e:
+        return {
+            "text": "⚠️ Error processing query",
+            "table": None,
+            "insight": str(e),
+        }
 
 
 # UI
@@ -68,6 +122,10 @@ st.markdown(
 
 col_input, col_btn = st.columns([9, 1])
 
+if st.session_state.clear_input:
+    st.session_state.chat_input = ""
+    st.session_state.clear_input = False
+
 with col_input:
     st.text_input(
         label="query",
@@ -94,6 +152,8 @@ if send_clicked:
         })
 
         st.session_state.pending_query = query_text
-        st.session_state.chat_input = ""
+
+        # ✅ mark for clearing (NOT direct clear)
+        st.session_state.clear_input = True
 
         st.rerun()
