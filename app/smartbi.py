@@ -3,6 +3,8 @@ import time
 import sys
 import os
 import asyncio
+import sqlite3
+from datetime import datetime
 
 
 async def setup_session(session_service, session_id):
@@ -54,6 +56,29 @@ except RuntimeError:
     loop.run_until_complete(setup_session(session_service, session_id))
     loop.close()
 
+
+def get_user_sessions():
+    """Fetch all sessions for the current user and app from the database."""
+    try:
+        conn = sqlite3.connect("data/session_data.db")
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, create_time, update_time 
+            FROM sessions 
+            WHERE app_name=? AND user_id=? 
+            ORDER BY create_time DESC
+        """,
+            (APP_NAME, USER_ID),
+        )
+        sessions = cursor.fetchall()
+        conn.close()
+        return sessions
+    except Exception as e:
+        st.error(f"Error fetching sessions: {e}")
+        return []
+
+
 # Sidebar
 with st.sidebar:
     if st.button("New Chat"):
@@ -63,6 +88,43 @@ with st.sidebar:
         new_session_id = f"session_{int(time.time())}"
         st.session_state[SESSION_KEY] = new_session_id
         st.rerun(scope="app")
+
+    # Display session history
+    st.divider()
+    st.caption("Chat History")
+
+    sessions = get_user_sessions()
+    if sessions:
+        for session_id, create_time_str, update_time_str in sessions:
+            # Parse the create time to format it nicely
+            try:
+                create_time = datetime.strptime(
+                    create_time_str.split(".")[0], "%Y-%m-%d %H:%M:%S"
+                )
+                formatted_time = create_time.strftime("%b %d, %H:%M")
+                button_label = f"Chat from {formatted_time}"
+            except:
+                button_label = f"Chat {session_id.split('_')[-1]}"
+
+            # Highlight current session
+            if session_id == st.session_state[SESSION_KEY]:
+                if st.button(button_label, key=f"session_{session_id}", type="primary"):
+                    # Switch to this session
+                    st.session_state.messages = []  # Clear messages for now - would need to load from DB
+                    st.session_state.pending_query = None
+                    st.session_state.clear_input = False
+                    st.session_state[SESSION_KEY] = session_id
+                    st.rerun(scope="app")
+            else:
+                if st.button(button_label, key=f"session_{session_id}"):
+                    # Switch to this session
+                    st.session_state.messages = []  # Clear messages for now - would need to load from DB
+                    st.session_state.pending_query = None
+                    st.session_state.clear_input = False
+                    st.session_state[SESSION_KEY] = session_id
+                    st.rerun(scope="app")
+    else:
+        st.caption("No previous chats")
 
 # Page config
 st.set_page_config(

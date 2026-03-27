@@ -18,9 +18,9 @@ html, body, [data-testid="stAppViewContainer"] {
 
 /* Hide Streamlit chrome */
 #MainMenu, footer, header,
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stStatusWidget"] { display: none !important; }
+# [data-testid="stToolbar"],
+# [data-testid="stDecoration"],
+# [data-testid="stStatusWidget"] { display: none !important; }
 
 /* ── App container ── */
 [data-testid="stAppViewContainer"] > .main {

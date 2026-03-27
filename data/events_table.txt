@@ -1,0 +1,22 @@
+CREATE TABLE events (
+	id VARCHAR(128) NOT NULL, 
+	app_name VARCHAR(128) NOT NULL, 
+	user_id VARCHAR(128) NOT NULL, 
+	session_id VARCHAR(128) NOT NULL, 
+	invocation_id VARCHAR(256) NOT NULL, 
+	timestamp DATETIME NOT NULL, 
+	event_data TEXT, 
+	PRIMARY KEY (id, app_name, user_id, session_id), 
+	FOREIGN KEY(app_name, user_id, session_id) REFERENCES sessions (app_name, user_id, id) ON DELETE CASCADE
+);
+CREATE TABLE events (
+	id VARCHAR(128) NOT NULL, 
+	app_name VARCHAR(128) NOT NULL, 
+	user_id VARCHAR(128) NOT NULL, 
+	session_id VARCHAR(128) NOT NULL, 
+	invocation_id VARCHAR(256) NOT NULL, 
+	timestamp DATETIME NOT NULL, 
+	event_data TEXT, 
+	PRIMARY KEY (id, app_name, user_id, session_id), 
+	FOREIGN KEY(app_name, user_id, session_id) REFERENCES sessions (app_name, user_id, id) ON DELETE CASCADE
+);
