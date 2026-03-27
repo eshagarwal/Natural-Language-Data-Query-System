@@ -1,21 +1,29 @@
 import streamlit as st
+import typing
+
 
 def render_header():
-    st.markdown("""
+    st.markdown(
+        """
     <div class="smartbi-header">
       <h1><span class="dot"></span> SmartBI</h1>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_empty_state():
-    st.markdown("""
+    st.markdown(
+        """
     <div class="empty-state">
       <div class="empty-icon">✦</div>
       <h2>Ask your data anything</h2>
       <p>SmartBI translates your plain-English questions into SQL and returns answers with insights.</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown('<div class="suggestion-chips">', unsafe_allow_html=True)
 
@@ -34,38 +42,40 @@ def render_empty_state():
                 st.session_state.chat_input = chip
                 st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_message(role: str, content: dict):
+def render_message(role: str, content: str, thought: typing.Union[str, None]):
     if role == "user":
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div class="message-row user">
-          <div class="bubble user">{content['text']}</div>
+          <div class="bubble user">{content}</div>
           <div class="avatar user">👤</div>
         </div>
-        """, unsafe_allow_html=True)
-
+        """,
+            unsafe_allow_html=True,
+        )
     else:
-        st.markdown(f"""
+        if thought:
+            with st.expander("Show thinking"):
+                st.markdown(
+                    f"""
+                {thought}
+                """,
+                    unsafe_allow_html=True,
+                )
+        st.markdown(
+            f"""
         <div class="message-row assistant">
           <div class="avatar assistant">BI</div>
-          <div class="bubble assistant">{content['text']}</div>
+          <div class="bubble assistant">{content}</div>
         </div>
-        """, unsafe_allow_html=True)
-
-        if content.get("table") is not None:
-            st.dataframe(content["table"], use_container_width=True, hide_index=True)
-
-        if content.get("insight"):
-            st.markdown(f"""
-            <div class="insight-box">
-              <strong>✦ Insight</strong>
-              {content['insight']}
-            </div>
-            """, unsafe_allow_html=True)
-
+        """,
+            unsafe_allow_html=True,
+        )
+        
 
 def render_messages():
     for msg in st.session_state.messages:
-        render_message(msg["role"], msg["content"])
+        render_message(msg["role"], msg["content"], msg["thought"])

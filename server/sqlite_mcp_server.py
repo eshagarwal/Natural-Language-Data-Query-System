@@ -3,7 +3,7 @@ from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 
 
-DB_PATH = "/Users/eshaagarwal/Code/Natural Language Data Query System/data/olist.sqlite"
+DB_PATH = "./data/olist.sqlite"
 
 
 mcp_server = FastMCP("SQL MCP", json_response=True)

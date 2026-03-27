@@ -4,12 +4,15 @@ from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
+cwd = os.getcwd()
+
 root_agent = Agent(
-    model="gemini-2.5-flash",
-    # model=LiteLlm("ollama_chat/glm-5:cloud"),
+    # model="gemini-2.5-flash",
+    model=LiteLlm("ollama_chat/glm-5:cloud"),
     # model=LiteLlm("ollama_chat/"),
     # model=LiteLlm("ollama_chat/gpt-oss:20b-cloud"),
     name="root_agent",
@@ -62,6 +65,7 @@ root_agent = Agent(
                         "run",
                         "server/sqlite_mcp_server.py",
                     ],
+                    cwd=cwd,
                 ),
             )
         ),

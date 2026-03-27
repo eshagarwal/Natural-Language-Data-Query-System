@@ -4,6 +4,7 @@ import sys
 import os
 import asyncio
 
+
 async def setup_session(session_service, session_id):
     session = await session_service.get_session(
         app_name=APP_NAME,
@@ -13,11 +14,9 @@ async def setup_session(session_service, session_id):
 
     if not session:
         await session_service.create_session(
-            app_name=APP_NAME,
-            user_id=USER_ID,
-            session_id=session_id,
-            state={}
+            app_name=APP_NAME, user_id=USER_ID, session_id=session_id, state={}
         )
+
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(ROOT_DIR)
@@ -25,6 +24,7 @@ sys.path.append(ROOT_DIR)
 from styles import load_css
 from components import render_header, render_empty_state, render_messages
 from adk_service import initialize_adk, run_adk_sync
+
 # Load styles
 load_css()
 
@@ -73,19 +73,17 @@ if "clear_input" not in st.session_state:
 # backend
 def get_response(query: str):
     try:
-        text = run_adk_sync(runner, session_id, query)
+        text, thought_text = run_adk_sync(runner, session_id, query)
 
         return {
             "text": text,
-            "table": None,
-            "insight": None,
+            "thought": thought_text,
         }
 
     except Exception as e:
         return {
             "text": "⚠️ Error processing query",
-            "table": None,
-            "insight": str(e),
+            "thought": "",
         }
 
 
@@ -97,7 +95,6 @@ if not st.session_state.messages:
 else:
     render_messages()
 
-
 # Handle query
 if st.session_state.pending_query:
     query = st.session_state.pending_query
@@ -106,10 +103,13 @@ if st.session_state.pending_query:
     with st.spinner("Thinking…"):
         response = get_response(query)
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": response,
-    })
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": response["text"],
+            "thought": response["thought"]
+        }
+    )
 
     st.rerun()
 
@@ -146,14 +146,15 @@ if send_clicked:
     query_text = st.session_state.get("chat_input", "").strip()
 
     if query_text:
-        st.session_state.messages.append({
-            "role": "user",
-            "content": {"text": query_text},
-        })
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": query_text,
+                "thought": None,
+            }
+        )
 
         st.session_state.pending_query = query_text
-
-        # ✅ mark for clearing (NOT direct clear)
         st.session_state.clear_input = True
 
         st.rerun()
