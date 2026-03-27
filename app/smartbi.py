@@ -14,7 +14,10 @@ async def setup_session(session_service, session_id):
 
     if not session:
         await session_service.create_session(
-            app_name=APP_NAME, user_id=USER_ID, session_id=session_id, state={}
+            app_name=APP_NAME,
+            user_id=USER_ID,
+            session_id=session_id,
+            state={},
         )
 
 
@@ -50,6 +53,16 @@ except RuntimeError:
     asyncio.set_event_loop(loop)
     loop.run_until_complete(setup_session(session_service, session_id))
     loop.close()
+
+# Sidebar
+with st.sidebar:
+    if st.button("New Chat"):
+        st.session_state.messages = []
+        st.session_state.pending_query = None
+        st.session_state.clear_input = False
+        new_session_id = f"session_{int(time.time())}"
+        st.session_state[SESSION_KEY] = new_session_id
+        st.rerun(scope="app")
 
 # Page config
 st.set_page_config(
@@ -107,7 +120,7 @@ if st.session_state.pending_query:
         {
             "role": "assistant",
             "content": response["text"],
-            "thought": response["thought"]
+            "thought": response["thought"],
         }
     )
 
