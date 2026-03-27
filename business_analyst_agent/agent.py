@@ -3,6 +3,9 @@ from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
+from dotenv import load_dotenv
+
+load_dotenv()
 
 root_agent = Agent(
     model="gemini-2.5-flash",
