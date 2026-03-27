@@ -147,6 +147,7 @@ html, body, [data-testid="stAppViewContainer"] {
 .message-row {
     display: flex;
     margin-bottom: 16px;
+    margin-top: 16px;
     animation: slideUp 0.25s ease;
 }
 @keyframes slideUp {
