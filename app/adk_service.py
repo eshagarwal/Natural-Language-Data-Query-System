@@ -26,7 +26,7 @@ def initialize_adk():
     return runner, session_service
 
 
-async def run_adk_async(runner: Runner, session_id, query):
+async def run_adk_async(runner: Runner, session_id: str, query):
     def filter_thought(content_part: genai_types.Part) -> tuple[bool, str]:
         """
         Takes content part as input and filters for thought.
@@ -83,5 +83,5 @@ async def run_adk_async(runner: Runner, session_id, query):
     return final_text, thought_text
 
 
-def run_adk_sync(runner, session_id, query):
+def run_adk_sync(runner: Runner, session_id: str, query: str):
     return asyncio.run(run_adk_async(runner, session_id, query))
