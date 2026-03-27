@@ -70,6 +70,15 @@ async def run_adk_async(runner: Runner, session_id, query):
                     thought_text += f"\n{text}"
                 else:
                     final_text += f"\n{text}"
+        else:
+            if event.content is None:
+                continue
+            if event.content.parts is None:
+                continue
+            for part in event.content.parts:
+                thought, text = filter_thought(part)
+                if thought:
+                    thought_text += f"\n{text}"
 
     return final_text, thought_text
 
