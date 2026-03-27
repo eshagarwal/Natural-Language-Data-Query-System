@@ -9,3 +9,4 @@ wheels/
 .ipynb_checkpoints/
 .env
 data/olist.sqlite
+.DS_Store
