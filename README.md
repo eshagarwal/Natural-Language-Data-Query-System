@@ -35,14 +35,15 @@ In modern organizations, **data-driven decision making** is critical. However, m
 
 ## 🎯 Key Features
 
-- 💬 Natural Language Query Interface  
-- 🔄 Automatic SQL Generation  
-- 📊 Data Retrieval from Relational Database  
-- 🧠 AI-Powered Insights  
-- ⚡ Real-time Responses  
-- 🧾 Chat-based Interaction History  
-
----
+- 📋 **Copy‑to‑clipboard** for every chat message – a 📋 button appears on each bubble, letting users quickly copy the assistant’s or their own text.
+- 🗂️ **Session list only shows sessions with chat history** – the backend query now filters out empty sessions while still guaranteeing the current session appears even if it has no messages.
+- 🔄 **Immediate UI refresh** after loading history – `st.rerun` is invoked so the loaded messages render without a manual reload.
+- 💬 Natural Language Query Interface
+- 🔄 Automatic SQL Generation
+- 📊 Data Retrieval from Relational Database
+- 🧠 AI‑Powered Insights
+- ⚡ Real‑time Responses
+- 🧾 Chat‑based Interaction History
 
 ## 🏗️ System Architecture
 
@@ -83,7 +84,7 @@ This is the **core integration layer** between UI and agent.
 - Handles:
   - Async execution (`run_async`)
   - Streamlit compatibility (sync wrapper)
-- Maintains **persistent sessions across reruns**
+- UI automatically refreshes after loading chat history (st.rerun)
 
 ---
 
