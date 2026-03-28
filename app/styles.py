@@ -48,6 +48,7 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 14px 0;
     text-align: center;
     margin-bottom: 8px;
+    margin-top: 40px;
 }
 .smartbi-header h1 {
     font-family: 'DM Sans', sans-serif;
@@ -334,6 +335,13 @@ html, body, [data-testid="stAppViewContainer"] {
     background: #EFF6FF;
     border-color: #BFDBFE;
     color: #1D4ED8;
+}
+
+/* Sidebar buttons full width + spacing */
+section[data-testid="stSidebar"] .stButton > button {
+    width: 100% !important;
+    border-radius: 12px !important;
+    margin-bottom: 10px !important;
 }
 
 </style>
