@@ -11,10 +11,7 @@ load_dotenv()
 cwd = os.getcwd()
 
 root_agent = Agent(
-    # model="gemini-2.5-flash",
-    model=LiteLlm("ollama_chat/glm-5:cloud"),
-    # model=LiteLlm("ollama_chat/"),
-    # model=LiteLlm("ollama_chat/gpt-oss:20b-cloud"),
+    model=LiteLlm("openai/glm-5:cloud"),
     name="root_agent",
     description="A helpful assistant for user questions.",
     instruction="""
