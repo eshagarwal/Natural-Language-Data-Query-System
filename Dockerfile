@@ -13,6 +13,6 @@ RUN uv sync --locked --no-dev
 
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 8501
+EXPOSE 7860
 
-CMD ["uv", "run", "streamlit", "run", "app/smartbi.py", "--server.address=0.0.0.0", "--server.port=8501"]
+CMD ["uv", "run", "streamlit", "run", "app/smartbi.py", "--server.address=0.0.0.0", "--server.port=7860"]
