@@ -1,5 +1,4 @@
 import streamlit as st
-import json
 import typing
 
 
@@ -46,12 +45,17 @@ def render_empty_state():
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_message(role: str, content: str, thought: typing.Union[str, None]):
+def render_message(
+    index: int,
+    role: str,
+    content: str,
+    thought: typing.Union[str, None],
+):
     if role == "user":
         st.markdown(
             f"""
         <div class="message-row user">
-            <div class="bubble user">{content}<button class="copy-btn" onclick="navigator.clipboard.writeText({json.dumps(content)})" style="margin-left:8px; cursor:pointer;">📋</button></div>
+            <div class="bubble user">{content}</div>
           <div class="avatar user">👤</div>
         </div>
         """,
@@ -70,7 +74,7 @@ def render_message(role: str, content: str, thought: typing.Union[str, None]):
             f"""
         <div class="message-row assistant">
           <div class="avatar assistant">BI</div>
-            <div class="bubble assistant">{content}<button class="copy-btn" onclick="navigator.clipboard.writeText({json.dumps(content)})" style="margin-left:8px; cursor:pointer;">📋</button></div>
+            <div class="bubble assistant">{content}</div>
         </div>
         """,
             unsafe_allow_html=True,
@@ -78,5 +82,10 @@ def render_message(role: str, content: str, thought: typing.Union[str, None]):
 
 
 def render_messages():
-    for msg in st.session_state.messages:
-        render_message(msg["role"], msg["content"], msg["thought"])
+    for idx, msg in enumerate(st.session_state.messages):
+        render_message(
+            idx,
+            msg["role"],
+            msg["content"],
+            msg["thought"],
+        )
