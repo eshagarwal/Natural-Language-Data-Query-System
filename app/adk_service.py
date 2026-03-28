@@ -40,7 +40,7 @@ async def run_adk_async(runner: Runner, session_id: str, query):
             return False, content_part.text if content_part.text else ""
         
 
-    session = runner.session_service.get_session(
+    session = await runner.session_service.get_session(
         app_name=APP_NAME,
         user_id=USER_ID,
         session_id=session_id,

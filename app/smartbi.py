@@ -30,12 +30,25 @@ def get_user_sessions():
         cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT id, create_time, update_time 
-            FROM sessions 
-            WHERE app_name=? AND user_id=? 
-            ORDER BY create_time DESC
+            SELECT
+                s.id,
+                s.create_time,
+                s.update_time
+            FROM
+                sessions AS s
+            WHERE
+                s.app_name = ? AND
+                s.user_id = ? AND
+                (EXISTS (
+                    SELECT 1
+                    FROM events e
+                    WHERE e.app_name   = s.app_name
+                      AND e.user_id    = s.user_id
+                      AND e.session_id = s.id
+                ) OR s.id = ?)
+            ORDER BY s.create_time DESC;
         """,
-            (APP_NAME, USER_ID),
+            (APP_NAME, USER_ID, current_session_id),
         )
         sessions = cursor.fetchall()
         conn.close()
@@ -133,22 +146,22 @@ USER_ID = "esha_user"
 
 # Session state initialization
 if SESSION_KEY not in st.session_state:
-    session_id = f"session_{int(time.time())}"
-    st.session_state[SESSION_KEY] = session_id
+    current_session_id = f"session_{int(time.time())}"
+    st.session_state[SESSION_KEY] = current_session_id
 else:
-    session_id = st.session_state[SESSION_KEY]
+    current_session_id = st.session_state[SESSION_KEY]
 
 # Load chat history for current session if not already loaded
 if "messages" not in st.session_state or not st.session_state.messages:
-    st.session_state.messages = load_chat_history(session_id)
+    st.session_state.messages = load_chat_history(current_session_id)
 
 # ✅ Run async session setup
 try:
-    asyncio.run(setup_session(session_service, session_id))
+    asyncio.run(setup_session(session_service, current_session_id))
 except RuntimeError:
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(setup_session(session_service, session_id))
+    loop.run_until_complete(setup_session(session_service, current_session_id))
     loop.close()
 
 
@@ -168,35 +181,40 @@ with st.sidebar:
 
     sessions = get_user_sessions()
     if sessions:
-        for session_id, create_time_str, update_time_str in sessions:
+        for list_session_id, create_time_str, update_time_str in sessions:
             # Parse the create time to format it nicely
             try:
                 create_time = datetime.strptime(
-                    create_time_str.split(".")[0], "%Y-%m-%d %H:%M:%S"
+                    create_time_str.split(".")[0],
+                    "%Y-%m-%d %H:%M:%S",
                 )
                 formatted_time = create_time.strftime("%b %d, %H:%M")
                 button_label = f"Chat from {formatted_time}"
             except:
-                button_label = f"Chat {session_id.split('_')[-1]}"
+                button_label = f"Chat {list_session_id.split('_')[-1]}"
 
             # Highlight current session
-            if session_id == st.session_state[SESSION_KEY]:
+            if list_session_id == st.session_state[SESSION_KEY]:
                 if st.button(
                     button_label,
-                    key=f"session_{session_id}",
+                    key=f"session_{list_session_id}",
                     type="primary",
                     use_container_width=True,
                 ):
                     st.rerun(scope="app")
             else:
                 if st.button(
-                    button_label, key=f"session_{session_id}", use_container_width=True
+                    button_label,
+                    key=f"session_{list_session_id}",
+                    use_container_width=True,
                 ):
                     # Load chat history for this session
-                    st.session_state.messages = load_chat_history(session_id)
+                    _chat_history = load_chat_history(list_session_id)
+                    st.session_state.messages = _chat_history
+                    # Trigger UI update after loading history
+                    st.session_state[SESSION_KEY] = list_session_id
                     st.session_state.pending_query = None
                     st.session_state.clear_input = False
-                    st.session_state[SESSION_KEY] = session_id
                     st.rerun(scope="app")
     else:
         st.caption("No previous chats")
@@ -224,7 +242,7 @@ if "clear_input" not in st.session_state:
 # backend
 def get_response(query: str):
     try:
-        text, thought_text = run_adk_sync(runner, session_id, query)
+        text, thought_text = run_adk_sync(runner, current_session_id, query)
 
         return {
             "text": text,

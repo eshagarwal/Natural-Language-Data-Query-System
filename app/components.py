@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 import typing
 
 
@@ -50,7 +51,7 @@ def render_message(role: str, content: str, thought: typing.Union[str, None]):
         st.markdown(
             f"""
         <div class="message-row user">
-          <div class="bubble user">{content}</div>
+            <div class="bubble user">{content}<button class="copy-btn" onclick="navigator.clipboard.writeText({json.dumps(content)})" style="margin-left:8px; cursor:pointer;">📋</button></div>
           <div class="avatar user">👤</div>
         </div>
         """,
@@ -69,12 +70,12 @@ def render_message(role: str, content: str, thought: typing.Union[str, None]):
             f"""
         <div class="message-row assistant">
           <div class="avatar assistant">BI</div>
-          <div class="bubble assistant">{content}</div>
+            <div class="bubble assistant">{content}<button class="copy-btn" onclick="navigator.clipboard.writeText({json.dumps(content)})" style="margin-left:8px; cursor:pointer;">📋</button></div>
         </div>
         """,
             unsafe_allow_html=True,
         )
-        
+
 
 def render_messages():
     for msg in st.session_state.messages:
