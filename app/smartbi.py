@@ -23,40 +23,6 @@ async def setup_session(session_service, session_id):
         )
 
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(ROOT_DIR)
-
-from styles import load_css
-from components import render_header, render_empty_state, render_messages
-from adk_service import initialize_adk, run_adk_sync
-
-# Load styles
-load_css()
-
-runner, session_service = initialize_adk()
-
-SESSION_KEY = "adk_session_id"
-APP_NAME = "smartbi_app"
-USER_ID = "esha_user"
-
-import time
-
-if SESSION_KEY not in st.session_state:
-    session_id = f"session_{int(time.time())}"
-    st.session_state[SESSION_KEY] = session_id
-else:
-    session_id = st.session_state[SESSION_KEY]
-
-# ✅ Run async session setup
-try:
-    asyncio.run(setup_session(session_service, session_id))
-except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(setup_session(session_service, session_id))
-    loop.close()
-
-
 def get_user_sessions():
     """Fetch all sessions for the current user and app from the database."""
     try:
@@ -79,9 +45,116 @@ def get_user_sessions():
         return []
 
 
+def load_chat_history(session_id):
+    """Load chat history for a specific session from the events table."""
+    try:
+        conn = sqlite3.connect("data/session_data.db")
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, timestamp, event_data
+            FROM events
+            WHERE app_name=? AND user_id=? AND session_id=?
+            ORDER BY timestamp ASC
+        """,
+            (APP_NAME, USER_ID, session_id),
+        )
+        events = cursor.fetchall()
+        conn.close()
+
+        messages = []
+        for event_id, timestamp_str, event_data_str in events:
+            try:
+                import json
+
+                event_data = json.loads(event_data_str)
+
+                # Extract user messages
+                if event_data.get("content", {}).get("role") == "user":
+                    parts = event_data.get("content", {}).get("parts", [])
+                    for part in parts:
+                        if "text" in part:
+                            messages.append(
+                                {
+                                    "role": "user",
+                                    "content": part["text"],
+                                    "thought": None,
+                                }
+                            )
+
+                # Extract assistant messages (model responses)
+                elif event_data.get("content", {}).get("role") == "model":
+                    parts = event_data.get("content", {}).get("parts", [])
+                    text_content = ""
+                    thought_content = ""
+
+                    for part in parts:
+                        if "text" in part:
+                            # Check if this is a thought (look for thought indicator)
+                            if part.get("thought", False) or "thought" in str(part):
+                                thought_content += part["text"]
+                            else:
+                                text_content += part["text"]
+
+                    if text_content:
+                        messages.append(
+                            {
+                                "role": "assistant",
+                                "content": text_content,
+                                "thought": thought_content if thought_content else None,
+                            }
+                        )
+
+            except (json.JSONDecodeError, KeyError) as e:
+                # Skip malformed events
+                continue
+
+        return messages
+    except Exception as e:
+        st.error(f"Error loading chat history: {e}")
+        return []
+
+
+# Load styles
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ROOT_DIR)
+
+from styles import load_css
+from components import render_header, render_empty_state, render_messages
+from adk_service import initialize_adk, run_adk_sync
+
+load_css()
+
+runner, session_service = initialize_adk()
+
+SESSION_KEY = "adk_session_id"
+APP_NAME = "smartbi_app"
+USER_ID = "esha_user"
+
+# Session state initialization
+if SESSION_KEY not in st.session_state:
+    session_id = f"session_{int(time.time())}"
+    st.session_state[SESSION_KEY] = session_id
+else:
+    session_id = st.session_state[SESSION_KEY]
+
+# Load chat history for current session if not already loaded
+if "messages" not in st.session_state or not st.session_state.messages:
+    st.session_state.messages = load_chat_history(session_id)
+
+# ✅ Run async session setup
+try:
+    asyncio.run(setup_session(session_service, session_id))
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(setup_session(session_service, session_id))
+    loop.close()
+
+
 # Sidebar
 with st.sidebar:
-    if st.button("New Chat"):
+    if st.button("➕  New Chat", use_container_width=True, type="primary"):
         st.session_state.messages = []
         st.session_state.pending_query = None
         st.session_state.clear_input = False
@@ -108,17 +181,19 @@ with st.sidebar:
 
             # Highlight current session
             if session_id == st.session_state[SESSION_KEY]:
-                if st.button(button_label, key=f"session_{session_id}", type="primary"):
-                    # Switch to this session
-                    st.session_state.messages = []  # Clear messages for now - would need to load from DB
-                    st.session_state.pending_query = None
-                    st.session_state.clear_input = False
-                    st.session_state[SESSION_KEY] = session_id
+                if st.button(
+                    button_label,
+                    key=f"session_{session_id}",
+                    type="primary",
+                    use_container_width=True,
+                ):
                     st.rerun(scope="app")
             else:
-                if st.button(button_label, key=f"session_{session_id}"):
-                    # Switch to this session
-                    st.session_state.messages = []  # Clear messages for now - would need to load from DB
+                if st.button(
+                    button_label, key=f"session_{session_id}", use_container_width=True
+                ):
+                    # Load chat history for this session
+                    st.session_state.messages = load_chat_history(session_id)
                     st.session_state.pending_query = None
                     st.session_state.clear_input = False
                     st.session_state[SESSION_KEY] = session_id
@@ -126,12 +201,13 @@ with st.sidebar:
     else:
         st.caption("No previous chats")
 
+
 # Page config
 st.set_page_config(
     page_title="SmartBI",
     page_icon="✦",
     layout="centered",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # Session state
