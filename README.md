@@ -229,6 +229,6 @@ It combines **LLMs, tool-based execution, and modern UI frameworks** to create a
 
 ---
 
-## 👤 Author
+## License 
 
-Esha Agarwal
+[MIT](./LICENSE)
