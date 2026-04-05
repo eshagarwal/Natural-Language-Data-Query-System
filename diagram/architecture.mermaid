@@ -1,0 +1,43 @@
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#ffffff',
+      'primaryTextColor': '#202124',
+      'primaryBorderColor': '#bdc1c6',
+      'lineColor': '#5f6368',
+      'secondaryColor': '#f8f9fa',
+      'tertiaryColor': '#ffffff',
+      'clusterBkg': '#f8f9fa',
+      'clusterBorder': '#dadce0',
+      'fontSize': '14px',
+      'fontFamily': 'Arial, sans-serif'
+    }
+  }
+}%%
+graph LR
+    classDef ui fill:#e8f0fe,stroke:#4285f4,stroke-width:2px;
+    classDef client fill:#e8f0fe,stroke:#4285f4,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef remote fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
+    classDef tools fill:#fef7e0,stroke:#fbbc04,stroke-width:2px;
+    classDef ai fill:#f3e8fd,stroke:#9334e1,stroke-width:2px;
+
+    subgraph "User Interface"
+        UI[Streamlit Frontend]:::ui
+    end
+
+    subgraph ADK["ADK Service Layer"]
+        LLM([Ollama Cloud]):::ai
+        SQL[BI Agent]:::remote
+    end
+
+    subgraph SQL_DB["Tools & Data (MCP)"]
+        MCP[SQLite MCP Server]:::tools
+        DB[(Olist DB)]:::tools
+    end
+
+    UI <-->|User Request| SQL
+
+    MCP <--> DB
+    
+    SQL <-.-> MCP
