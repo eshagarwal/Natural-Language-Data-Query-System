@@ -1,234 +1,211 @@
-# 🧠 SmartBI — AI-Powered Self-Service Business Intelligence System
+# 🧠 SmartBI
+
+SmartBI is an AI-powered self-service business intelligence app for exploring a local e-commerce SQLite database. Users ask questions in plain English, the agent checks the schema, writes a safe SQL `SELECT` query, runs it through an MCP server, and returns the answer in a polished Streamlit chat interface.
 
 ---
 
-## 📌 Problem Statement
+## 📌 What This Project Is
 
-In modern organizations, **data-driven decision making** is critical. However, most business users (e.g., managers, analysts, operations teams) face a major challenge:
+This project is a **natural-language-to-SQL analytics assistant** for business users who want answers from data without writing SQL manually.
 
-> ❗ They cannot directly query data without technical expertise.
+It is designed to:
 
-### 🚧 Real-World Challenges
+- 💬 Accept business questions in natural language
+- 🧠 Use an AI agent to inspect schema before writing SQL
+- 🗄️ Run read-only SQL queries against a local SQLite database
+- 📊 Return answers in a chat-style BI interface
+- 🧾 Store local chat sessions and restore prior history
 
-- Business users depend on **data analysts or engineers** to write SQL queries  
-- This creates:
-  - ⏳ Delays in decision-making  
-  - 🔁 Repetitive workload for technical teams  
-  - 📉 Reduced agility in business operations  
-- Even simple questions like:
-  - *“What are the top-selling products this month?”*
-  - *“How is revenue trending?”*  
-  require technical intervention
+### Example questions
 
----
-
-## 💡 Solution — SmartBI
-
-**SmartBI** is an **AI-Powered Self-Service Business Intelligence System** that allows users to:
-
-👉 Ask questions in **natural language**  
-👉 Automatically convert them into **SQL queries**  
-👉 Fetch data from a database  
-👉 Display results and insights instantly  
+- "What are the top-selling products?"
+- "Show revenue trends over time"
+- "Which cities have the most orders?"
+- "Average review score by seller"
 
 ---
 
-## 🎯 Key Features
+## ✨ How It Works
 
-- 📋 **Copy‑to‑clipboard** for every chat message – a 📋 button appears on each bubble, letting users quickly copy the assistant’s or their own text.
-- 🗂️ **Session list only shows sessions with chat history** – the backend query now filters out empty sessions while still guaranteeing the current session appears even if it has no messages.
-- 🔄 **Immediate UI refresh** after loading history – `st.rerun` is invoked so the loaded messages render without a manual reload.
-- 💬 Natural Language Query Interface
-- 🔄 Automatic SQL Generation
-- 📊 Data Retrieval from Relational Database
-- 🧠 AI‑Powered Insights
-- ⚡ Real‑time Responses
-- 🧾 Chat‑based Interaction History
+The application is split into four main layers:
 
-## 🏗️ System Architecture
+### 1. 🎨 Streamlit UI
 
-User (Streamlit UI)  
-↓  
-ADK Service Layer (Runner + Session)  
-↓  
-Business Intelligence Agent (Gemini-powered)  
-↓  
-MCP Server (Tool Execution Layer)  
-↓  
-SQLite Database (Olist Dataset)
+The frontend in [app/smartbi.py](./app/smartbi.py) renders:
 
----
-
-## 🔍 Architecture Breakdown
-
-### 1. 🎨 Frontend — Streamlit UI
-
-- ChatGPT-style interface
-- Handles:
-  - User input
-  - Chat history
-  - Displaying responses, tables, and insights
-- Provides a clean and interactive user experience
-
----
+- chat messages
+- sidebar history
+- session switching
+- query submission and response display
 
 ### 2. ⚙️ ADK Service Layer
 
-This is the **core integration layer** between UI and agent.
+The service in [app/adk_service.py](./app/adk_service.py):
 
-#### Responsibilities
+- initializes the Google ADK runner
+- manages session persistence
+- bridges async execution into the Streamlit app
+- separates internal thought text from final user-facing output
 
-- Initializes:
-  - `Runner` (execution engine)
-  - `Session Service` (memory management)
-- Handles:
-  - Async execution (`run_async`)
-  - Streamlit compatibility (sync wrapper)
-- UI automatically refreshes after loading chat history (st.rerun)
+### 3. 🧠 Business Analyst Agent
 
----
+The agent in [business_analyst_agent/agent.py](./business_analyst_agent/agent.py) is instructed to:
 
-### 3. 🧠 Business Intelligence Agent
+- inspect schema first
+- never guess table or column names
+- use tools through MCP
+- execute read-only SQL workflows
+- respond like a business intelligence analyst
 
-Built using **Google ADK (Agent Development Kit)**
+### 4. 🔌 MCP SQLite Server
 
-#### Capabilities
+The MCP server in [server/sqlite_mcp_server.py](./server/sqlite_mcp_server.py) exposes:
 
-- Converts natural language → SQL
-- Uses tools via MCP
-- Follows structured prompting:
-  - Avoids guessing schema
-  - Uses database metadata
-  - Generates business-friendly responses
+- `schema://tables` → list tables
+- `schema://{table_name}` → inspect a table
+- `run_sqlite_query(query)` → execute `SELECT` queries only
 
 ---
 
-### 4. 🔌 MCP Server (Tool Layer)
+## 🏗️ Architecture
 
-MCP (Model Context Protocol) acts as the **execution bridge**.
+The repository includes an architecture diagram here:
 
-#### Tools
+[diagram/architecture_diagram.png](./diagram/architecture_diagram.png)
 
-- `schema://tables` → list tables  
-- `schema://{table}` → inspect schema  
-- `run_sqlite_query` → execute SQL  
+![SmartBI Architecture](./diagram/architecture_diagram.png)
 
-#### Role
-
-- Executes queries generated by the agent
-- Returns structured results
-
----
-
-### 5. 🗄️ Database — SQLite (Olist Dataset)
-
-- Real-world e-commerce dataset
-- Contains:
-  - Orders  
-  - Customers  
-  - Products  
-  - Payments  
-  - Sellers  
-  - Reviews  
-
-#### Why this dataset?
-
-- Multi-table relational structure  
-- Suitable for business analytics  
-- Realistic use cases  
+```text
+User
+  -> Streamlit UI
+  -> ADK Runner + Session Service
+  -> Business Analyst Agent
+  -> MCP SQLite Server
+  -> Local SQLite Database
+```
 
 ---
 
-## 🔄 End-to-End Flow
+## 📁 Project Structure
 
-1. User enters query in natural language  
-2. Streamlit sends input to ADK service  
-3. ADK Runner executes the agent  
-4. Agent:
-   - Understands intent  
-   - Generates SQL  
-   - Calls MCP tools  
-5. MCP executes SQL on database  
-6. Results returned to agent  
-7. Agent generates:
-   - Response text  
-   - Insights  
-8. UI displays output  
+```text
+.
+├── app/
+│   ├── adk_service.py        # ADK runner/session setup and response handling
+│   ├── components.py         # Streamlit UI rendering helpers
+│   ├── smartbi.py            # Main Streamlit app
+│   └── styles.py             # Custom UI styling
+├── business_analyst_agent/
+│   └── agent.py              # Agent definition and instructions
+├── diagram/
+│   ├── architecture.mermaid  # Source diagram
+│   └── architecture_diagram.png # Rendered architecture diagram
+├── server/
+│   └── sqlite_mcp_server.py  # MCP server for schema access and SQL execution
+├── data/
+│   ├── olist.sqlite          # Main e-commerce SQLite database
+│   └── session_data.db       # Local session/history database
+├── main.py                   # Legacy entrypoint file in repo
+└── pyproject.toml            # Project dependencies
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-
-- **Streamlit** — UI framework
-
-### Backend
-
-- **Python**
-
-### AI / Agent Layer
-
-- **Google ADK (Agent Development Kit)**
-- **Gemini Model (gemini-2.5-flash)**
-
-### Data Layer
-
-- **SQLite**
-
-### Integration
-
-- **MCP Server** — tool execution layer
-
-### Utilities
-
-- `asyncio` — async handling  
-- `dotenv` — environment management  
+- 🐍 Python 3.11+
+- 🎈 Streamlit
+- 🤖 Google ADK
+- 🔗 MCP / FastMCP
+- 🗄️ SQLite
+- ⚡ `uv` for dependency management and execution
 
 ---
 
-## ⚡ Key Technical Highlights
+## 🎯 Current Agent Behavior
 
-- 🔁 **Async + Sync Bridging**  
-  Handles ADK’s async nature within Streamlit’s sync environment  
+The current agent behavior is defined in [business_analyst_agent/agent.py](./business_analyst_agent/agent.py).
 
-- 🧠 **Session Management**  
-  Maintains context using ADK session service  
+It is configured to:
 
-- 🧩 **Modular Architecture**  
-  Clean separation of:
-  - UI  
-  - Agent  
-  - Service Layer  
-
-- 🔌 **Tool-Based Execution (MCP)**  
-  Enables safe and structured database interaction  
+- ✅ inspect schema before querying
+- ✅ avoid inventing tables or columns
+- ✅ execute `SELECT` queries only
+- ✅ retry after checking schema if a query fails
+- ✅ present results in a business-friendly format
 
 ---
 
-## 🔮 Future Enhancements
+## 🚀 Setup
 
-- 📊 Structured table output (DataFrames)  
-- 📈 Advanced visualizations (charts)  
-- 🧠 Improved insight generation  
-- 🔐 User authentication  
-- ⚡ Query caching & optimization  
-- 🔍 SQL transparency (show generated query)  
+### 1. Install dependencies
+
+```bash
+uv sync
+```
+
+### 2. Add environment variables if needed
+
+```bash
+cp .env.example .env
+```
+
+### 3. Run the app
+
+```bash
+uv run main.py
+```
+
+This project is intended to be run with `uv run`.
 
 ---
 
-## 🧾 Conclusion
+## 🗄️ Data
 
-SmartBI demonstrates how modern AI systems can:
+The app is currently wired to the local SQLite database:
 
-- Democratize access to data  
-- Reduce dependency on technical teams  
-- Enable faster, smarter business decisions  
+`data/olist.sqlite`
 
-It combines **LLMs, tool-based execution, and modern UI frameworks** to create a scalable and practical Business Intelligence solution.
+This is an e-commerce dataset suited around:
+
+- orders
+- sellers
+- payments
+- reviews
+- product performance
+- geographic trends
 
 ---
 
-## License 
+## 🧾 Session Storage
+
+Chat sessions are stored locally in:
+
+`data/session_data.db`
+
+The sidebar in the UI reads from this database to display previous chats and restore conversation history.
+
+---
+
+## ⚠️ Current Limitations
+
+- The app is built around a local database, not a cloud warehouse
+- Responses are primarily text-based right now
+- Built-in charting and richer tables are not implemented yet
+
+---
+
+## 🔮 Future Improvements
+
+- 📄 Show generated SQL in the UI
+- 📋 Render richer tabular output
+- 📈 Add charts and visual trend analysis
+- 🗃️ Support databases beyond SQLite
+- ✅ Add stronger automated test coverage
+- 🔐 Improve authentication and multi-user support
+
+---
+
+## License
 
 [MIT](./LICENSE)
